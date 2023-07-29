@@ -22,7 +22,8 @@ contract VotingToken {
     function deposit() public payable {
         depositOf[msg.sender] = msg.value;
         // 0.1 eth 1000 token
-        uint256 totalTokenRecieve = (msg.value * 1000) / (0.1 * 10**18);
+        // uint256 totalTokenRecieve = (msg.value * 1000) / (0.1 * 10**18);
+        uint256 totalTokenRecieve = msg.value * 100;
         balanceOf[msg.sender] = totalTokenRecieve;
         totalSupply += totalTokenRecieve;
     }
