@@ -2,11 +2,8 @@ pragma solidity >0.8.9;
 
 interface IToken {
     function transferFrom(address, address, uint256) external returns (bool);
-
     function approve(address, uint256) external returns (bool);
-
     function balanceOf(address) external returns (uint256);
-
     function totalSupply() external returns (uint256);
 }
 
@@ -24,17 +21,14 @@ contract VotingContract {
     uint256 public proposalCount;
 
     mapping(address => mapping(uint256 => bool)) private hasVoted;
-    mapping(uint256 => uint8) public resultProposal;
+    mapping(uint256 => bool) public resultProposal;
 
     event CreateProposal(uint256);
     event CastVote(address, uint256, bool);
-    event Finalize(uint256, uint8);
+    event Finalize(uint256, bool);
 
     modifier checkProposalEnded(uint256 proposalId) {
-        require(
-            block.timestamp < proposals[proposalId].timestamp,
-            "Proposal is ended"
-        );
+        require(block.timestamp < proposals[proposalId].timestamp, "Proposal is ended");
         _;
     }
 
@@ -44,22 +38,19 @@ contract VotingContract {
     }
 
     function createProposal(string memory _description) public {
-        votingToken.transferFrom(msg.sender, address(this), 20 * 10 ** 18);
+        votingToken.transferFrom(msg.sender, address(this), 20);
         Proposal memory proposal = Proposal(
             _description,
             0,
             0,
-            block.timestamp + 3 minutes // 2 minutes
+            block.timestamp + 5 minutes // 2 minutes
         );
         ++proposalCount;
         proposals.push(proposal);
         emit CreateProposal(proposalCount);
     }
 
-    function castVote(
-        uint256 proposalId,
-        bool isApproved
-    ) public checkProposalEnded(proposalId) {
+    function castVote(uint256 proposalId, bool isApproved) public checkProposalEnded(proposalId) {
         require(!hasVoted[msg.sender][proposalId], "Already voted");
         uint256 totalToken = votingToken.balanceOf(msg.sender);
         if (isApproved) {
@@ -72,17 +63,14 @@ contract VotingContract {
     }
 
     function finalizeProposal(uint256 proposalId) public {
-        require(
-            block.timestamp >= proposals[proposalId].timestamp,
-            "Not ended"
-        );
+        require(block.timestamp >= proposals[proposalId].timestamp, "Not ended");
         uint256 yesCount = proposals[proposalId].yesCount;
         uint256 totalSupply = votingToken.totalSupply();
         uint256 totalYesVote = (yesCount / totalSupply) * 100;
         if (totalYesVote > 50) {
-            resultProposal[proposalId] = 1;
+            resultProposal[proposalId] = true;
         } else {
-            resultProposal[proposalId] = 2;
+            resultProposal[proposalId] = false;
         }
         emit Finalize(proposalId, resultProposal[proposalId]);
     }
